@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>作品紹介 | Cyber Buckshot</title>
+    <!-- Google Fonts for futuristic look -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .intro-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            text-align: center;
+            padding: 2rem;
+            gap: 1.5rem;
+            overflow-y: auto;
+        }
+        .intro-section {
+            background: rgba(13, 17, 23, 0.7);
+            border: 1px solid rgba(0, 243, 255, 0.4);
+            padding: 2rem;
+            border-radius: 8px;
+            max-width: 800px;
+            width: 90%;
+            box-shadow: 0 0 15px rgba(0, 243, 255, 0.1);
+        }
+        .intro-section h2 {
+            font-family: var(--font-cyber);
+            color: var(--neon-cyan);
+            margin-bottom: 0.8rem;
+            font-size: 1.3rem;
+            letter-spacing: 1px;
+            text-align: left;
+            border-bottom: 1px solid rgba(0, 243, 255, 0.3);
+            padding-bottom: 0.5rem;
+        }
+        .intro-section p, .intro-section ul {
+            font-family: var(--font-main);
+            color: var(--text-color);
+            line-height: 1.6;
+            text-align: left;
+            margin-bottom: 1.5rem;
+        }
+        .intro-section ul {
+            padding-left: 1.5rem;
+        }
+        .intro-section li {
+            margin-bottom: 0.5rem;
+        }
+        .start-btn {
+            font-family: var(--font-cyber);
+            font-size: 1.2rem;
+            padding: 1rem 3rem;
+            background: rgba(255, 0, 85, 0.1);
+            color: var(--neon-red);
+            border: 2px solid var(--neon-red);
+            border-radius: 4px;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            box-shadow: 0 0 15px rgba(255, 0, 85, 0.2);
+            margin-top: 1rem;
+            display: inline-block;
+        }
+        .start-btn:hover {
+            background: var(--neon-red);
+            color: #fff;
+            box-shadow: 0 0 25px rgba(255, 0, 85, 0.6);
+            text-shadow: 0 0 5px #fff;
+        }
+    </style>
+</head>
+<body>
+    <div class="grid-bg"></div>
+    <div class="scanlines"></div>
+
+    <div id="game-container">
+        <div class="intro-container">
+            <h1 class="game-title" style="margin-top: 1rem;">
+                <span class="neon-text-cyan">CYBER</span> 
+                <span class="neon-text-red">BUCKSHOT</span>
+            </h1>
+            <p class="subtitle" style="margin-bottom: 1rem;">作品紹介・概要</p>
+
+            <div class="intro-section">
+                <h2>タイトル名</h2>
+                <p>Cyber Buckshot (サイバーバックショット)</p>
+
+                <h2>コンセプト</h2>
+                <p>
+                    サイバーパンクな世界観で繰り広げられる、生死を賭けた2Dロシアンルーレットです。<br>
+                    ネオン管やグリッド、スキャンラインなどの視覚効果と、緊迫感のあるサウンドで没入感を高めています。AIとの対戦だけでなく、1台のPCで遊べるローカル対人戦（PvP）も実装しています。
+                </p>
+
+                <h2>工夫点</h2>
+                <ul>
+                    <li><strong>サイバーパンクなUI/UX:</strong> CSSのみでネオンの発光やスキャンライン、背景のパルスアニメーションを表現し、リッチなビジュアルを構築しました。</li>
+                    <li><strong>対人戦でのブラックアウト機能:</strong> PvPモード時、手札（アイテム）を「目隠し（Hide）」できるボタンを実装し、1つの画面でも相手に手札を見られずに心理戦を行えるよう工夫しました。</li>
+                    <li><strong>リッチな演出とフィードバック:</strong> 銃撃時の画面シェイク（揺れ）や、弾の装填アニメーション、アイテム使用時のサウンドなど、ゲームの手触り・臨場感にこだわりました。</li>
+                    <li><strong>クリーンなコード構造:</strong> HTML/CSS/JavaScriptを完全に分離し、モダンで保守性の高いコードベースを維持しています。</li>
+                </ul>
+            </div>
+
+            <!-- GitHub PagesのURL（クリックで本編に飛べるように） -->
+            <a href="game.html" class="start-btn">ゲーム本編をプレイする (Play Game)</a>
+        </div>
+    </div>
+</body>
+</html>
