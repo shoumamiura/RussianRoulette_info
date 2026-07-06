@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cyber Buckshot | 2D Russian Roulette</title>
+    <!-- Google Fonts for futuristic look -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Cyberpunk grid dynamic background -->
+    <div class="grid-bg"></div>
+    <div class="scanlines"></div>
+
+    <div id="game-container">
+        <!-- Sound Control Toggle (Always visible in corner) -->
+        <button id="sound-toggle" class="sound-btn" onclick="sound.toggleMute(); this.classList.toggle('muted');" aria-label="Toggle Sound">
+            <span class="sound-on-icon">🔊</span>
+            <span class="sound-off-icon">🔇</span>
+        </button>
+
+        <!-- 1. START SCREEN -->
+        <div id="start-screen" class="screen active">
+            <h1 class="game-title">
+                <span class="neon-text-cyan">CYBER</span> 
+                <span class="neon-text-red">BUCKSHOT</span>
+            </h1>
+            <p class="subtitle">2D RUSSIAN ROULETTE</p>
+
+            <div class="mode-select">
+                <div class="mode-card active" id="mode-pve" onclick="selectMode('pve')">
+                    <h3>PLAYER VS AI</h3>
+                    <p>AIディーラーと生死を賭けた1対1の勝負</p>
+                </div>
+                <div class="mode-card" id="mode-pvp" onclick="selectMode('pvp')">
+                    <h3>PLAYER VS PLAYER</h3>
+                    <p>ローカル2P対戦（手札ブラックアウト機能搭載）</p>
+                </div>
+            </div>
+
+            <div class="player-names-input">
+                <div class="input-group">
+                    <label for="p1-name-input">PLAYER 1 名前</label>
+                    <input type="text" id="p1-name-input" value="PLAYER 1" maxlength="10">
+                </div>
+                <div class="input-group" id="p2-input-group" style="display: none;">
+                    <label for="p2-name-input">PLAYER 2 名前</label>
+                    <input type="text" id="p2-name-input" value="PLAYER 2" maxlength="10">
+                </div>
+            </div>
+
+            <!-- Difficulty Selector for PvE -->
+            <div class="difficulty-select" id="difficulty-area">
+                <label>ディーラー難易度</label>
+                <div class="diff-buttons">
+                    <button type="button" class="btn-diff" id="diff-easy" onclick="selectDifficulty('easy')">EASY</button>
+                    <button type="button" class="btn-diff active" id="diff-normal" onclick="selectDifficulty('normal')">NORMAL</button>
+                    <button type="button" class="btn-diff" id="diff-hard" onclick="selectDifficulty('hard')">HARD</button>
+                </div>
+            </div>
+
+            <button id="btn-start" class="btn-primary glow-cyan" onclick="startGame()">対戦開始</button>
+
+            <!-- Game Rules Box -->
+            <div class="rules-box">
+                <h4>システム規約（ルール）</h4>
+                <ul>
+                    <li><strong>相手を撃つ:</strong> 実弾なら敵にダメージ＋ターン交代。空砲ならノーダメージ＋ターン交代。</li>
+                    <li><strong>自分を撃つ:</strong> 空砲ならダメージなし＋<strong>ターン継続（もう一度行動可能）</strong>。実弾なら自分にダメージ＋ターン交代。</li>
+                    <li><strong>確認動作（虫眼鏡）:</strong> 次の弾が実弾か空砲かを自分だけ確認する。</li>
+                    <li><strong>包帯:</strong> ライフを1回復する（最大値5）。</li>
+                    <li><strong>コルク栓:</strong> 敵の自傷時に暴発を引き起こし、空砲でもダメージを与える。使用後3ターン毎に自動補充。</li>
+                </ul>
+            </div>
+
+            <!-- Match History in Start Screen -->
+            <div class="history-box">
+                <h4>対戦履歴</h4>
+                <div id="history-list" class="history-list">
+                    <p class="no-history">履歴はありません</p>
+                </div>
+                <button class="btn-text" onclick="clearHistory()">履歴を消去</button>
+            </div>
+        </div>
+
+        <!-- 2. GAMEPLAY SCREEN -->
+        <div id="game-screen" class="screen">
+            <!-- Top Bar / Opponent Info -->
+            <div id="opponent-panel" class="player-panel opponent">
+                <div class="player-info">
+                    <div class="name-status">
+                        <span id="opp-name" class="player-name">DEALER (AI)</span>
+                        <span id="opp-cork-badge" class="cork-badge">コルク装填中</span>
+                    </div>
+                    <!-- Heart Container -->
+                    <div class="health-container">
+                        <span class="health-label">LIFE:</span>
+                        <div id="opp-hp-bar" class="hp-dots"></div>
+                    </div>
+                </div>
+
+                <!-- Opponent Hand (Blacks out in PvP during player's turn) -->
+                <div id="opp-hand" class="item-container">
+                    <div class="item-slot shadow-red" data-item="scan" id="opp-scan-slot" title="確認動作: 次の弾を調べる">
+                        <span class="item-icon">🔍</span>
+                        <span class="item-count" id="opp-item-scan-count">1</span>
+                        <span class="cooldown-overlay" id="opp-scan-cd">READY</span>
+                    </div>
+                    <div class="item-slot shadow-green" data-item="heal" title="包帯: ライフを1回復">
+                        <span class="item-icon">🩹</span>
+                        <span class="item-count" id="opp-item-heal-count">1</span>
+                    </div>
+                    <div class="item-slot shadow-amber" data-item="cork" id="opp-cork-slot" title="コルク栓: 敵の自傷暴発トラップ">
+                        <span class="item-icon">🍾</span>
+                        <span class="item-count" id="opp-item-cork-count">1</span>
+                        <span class="cork-cooldown" id="opp-cork-cd">READY</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Central Battle Area -->
+            <div id="battle-deck">
+                <!-- Round / Bullet status -->
+                <div class="round-status">
+                    <div class="bullet-indicator">
+                        <span class="indicator-title">シリンダー装填状況</span>
+                        <div class="bullet-ratio">
+                            <span class="ratio-live"><span class="bullet-dot live"></span>実弾: <span id="live-count">0</span></span>
+                            <span class="ratio-blank"><span class="bullet-dot blank"></span>空砲: <span id="blank-count">0</span></span>
+                        </div>
+                    </div>
+                    <div class="reload-overlay" id="reload-message">
+                        <div class="reload-spinner"></div>
+                        <span>リロード中...</span>
+                    </div>
+                </div>
+
+                <!-- Arena with shotgun illustration -->
+                <div class="arena">
+                    <div id="shotgun-wrapper" class="shotgun-pos-center">
+                        <svg class="shotgun-svg" viewBox="0 0 100 20" xmlns="http://www.w3.org/2000/svg">
+                            <!-- Stock -->
+                            <path d="M 5,6 L 25,6 L 28,14 L 5,17 Z" fill="#332211" stroke="#221100" stroke-width="0.5"/>
+                            <!-- Grip -->
+                            <rect x="25" y="10" width="8" height="6" rx="2" fill="#222" stroke="#111" stroke-width="0.5"/>
+                            <!-- Receiver / Body -->
+                            <rect x="28" y="5" width="22" height="10" rx="1" fill="#444" stroke="#222" stroke-width="0.5"/>
+                            <rect x="32" y="8" width="10" height="3" fill="#111"/>
+                            <!-- Barrel -->
+                            <rect x="50" y="6" width="40" height="6" fill="#666" stroke="#333" stroke-width="0.5"/>
+                            <rect x="90" y="6" width="3" height="6" fill="#888"/>
+                            <circle cx="91.5" cy="9" r="0.8" fill="#ffaa00"/>
+                        </svg>
+                        <!-- Muzzle flash effect -->
+                        <div id="muzzle-flash" class="flash"></div>
+                    </div>
+                </div>
+
+                <!-- Event logger -->
+                <div class="console-log">
+                    <div id="log-content">ゲーム開始。</div>
+                </div>
+            </div>
+
+            <!-- Bottom Bar / Player Info -->
+            <div id="player-panel" class="player-panel player">
+                <!-- Player Hand -->
+                <div id="play-hand" class="item-container">
+                    <button class="item-slot shadow-red clickable" id="btn-item-scan" onclick="useItem('scan')" title="確認動作: 次の弾が実弾か空砲か確認する">
+                        <span class="item-icon">🔍</span>
+                        <span class="item-count" id="play-item-scan-count">1</span>
+                        <span class="cooldown-overlay" id="play-scan-cd">READY</span>
+                    </button>
+                    <button class="item-slot shadow-green clickable" id="btn-item-heal" onclick="useItem('heal')" title="包帯: ライフを1回復する">
+                        <span class="item-icon">🩹</span>
+                        <span class="item-count" id="play-item-heal-count">1</span>
+                    </button>
+                    <button class="item-slot shadow-amber clickable" id="btn-item-cork" onclick="useItem('cork')" title="コルク栓: 敵の自傷時に暴発を引き起こす（3ターンに1回補充）">
+                        <span class="item-icon">🍾</span>
+                        <span class="item-count" id="play-item-cork-count">1</span>
+                        <span class="cork-cooldown" id="play-cork-cd">READY</span>
+                    </button>
+                </div>
+
+                <div class="player-info">
+                    <div class="name-status">
+                        <span id="play-name" class="player-name">PLAYER 1</span>
+                        <span id="play-cork-badge" class="cork-badge">コルク装填中</span>
+                    </div>
+                    <!-- Heart Container -->
+                    <div class="health-container">
+                        <span class="health-label">LIFE:</span>
+                        <div id="play-hp-bar" class="hp-dots"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Control Buttons -->
+            <div id="action-controls" class="controls-panel">
+                <button id="btn-shoot-opp" class="btn-action glow-red" onclick="shoot('opponent')">相手を撃つ</button>
+                <button id="btn-shoot-self" class="btn-action glow-cyan" onclick="shoot('self')">自分を撃つ</button>
+            </div>
+        </div>
+
+        <!-- 3. TURN INTERMISSION / BLACKOUT (Local PvP mode only) -->
+        <div id="blackout-screen" class="screen-overlay">
+            <div class="blackout-box">
+                <h2 class="neon-text-amber">ターン交代</h2>
+                <p id="blackout-message">PLAYER 2 のターンです。</p>
+                <p class="blackout-warning">相手は画面を見ないでください。</p>
+                <button id="btn-ready" class="btn-primary glow-amber" onclick="dismissBlackout()">準備完了</button>
+            </div>
+        </div>
+
+        <!-- 4. SCANNER INFO POPUP -->
+        <div id="scan-popup" class="screen-overlay" style="display: none;">
+            <div class="scanner-box">
+                <h3>🔍 スキャン結果</h3>
+                <div class="scanner-display">
+                    <p>次の弾薬は...</p>
+                    <div id="scan-result-text" class="scan-result-neon">LIVE</div>
+                </div>
+                <!-- Interactive peek for PvP -->
+                <p id="scan-pvp-warning" class="scan-pvp-warning" style="display: none;">ボタンを長押ししている間だけ結果が表示されます</p>
+                <div class="scan-peek-container" id="scan-peek-container" style="display: none;">
+                    <button class="btn-action glow-cyan" id="btn-scan-peek" onmousedown="showScanPeek()" onmouseup="hideScanPeek()" ontouchstart="showScanPeek()" ontouchend="hideScanPeek()">長押しで確認</button>
+                </div>
+                <button id="btn-scan-close" class="btn-secondary" onclick="closeScanPopup()">閉じる</button>
+            </div>
+        </div>
+
+        <!-- 5. RESULT SCREEN -->
+        <div id="result-screen" class="screen">
+            <h2 class="result-title neon-text-green">VICTORY</h2>
+            <div class="winner-display">
+                <span id="winner-name">PLAYER 1</span> <span class="win-label">の勝利！</span>
+            </div>
+
+            <div class="final-stats">
+                <p>生存者ライフ: <span id="winner-health">5</span></p>
+                <p>使用アイテム総数: <span id="items-used">0</span></p>
+            </div>
+
+            <div class="result-actions">
+                <button class="btn-primary glow-green" onclick="restartGame()">もう一度戦う</button>
+                <button class="btn-secondary" onclick="goBackToMenu()">メニューに戻る</button>
+            </div>
+
+            <div class="history-box in-result">
+                <h4>最新の戦績履歴</h4>
+                <div id="result-history-list" class="history-list"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="sound.js"></script>
+    <script src="game.js"></script>
+</body>
+</html>
